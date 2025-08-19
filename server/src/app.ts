@@ -1,12 +1,22 @@
 import express, { Request, Response } from "express";
+import wetterWidgetRouter from "./routes/wetterWidgetRouter";
+import errorHandler from "./middleware/errorHandler";
+import "./db/index"; // Ensure database connection is established
+import { PORT } from "./config";
 
 const app = express();
-const port = 3000;
+app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+// Mount widget routes
+app.use("/widgets", wetterWidgetRouter);
+
+// Error handler
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
