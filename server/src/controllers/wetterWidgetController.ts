@@ -1,3 +1,10 @@
+// ================= Wetter Widget Controller =====================
+// This controller handles CRUD operations for weather widgets.
+// It integrates with the weather cache and external weather service,
+// and provides endpoints for listing, creating, and deleting widgets.
+// Each exported function is wrapped with asyncHandler for robust error handling.
+// ===============================================================
+
 import { Request, Response } from "express";
 import asyncHandler from "../utils/asyncHandler";
 import ErrorResponse from "../utils/errorResponse";
@@ -10,12 +17,17 @@ import {
   isWeatherCacheValid,
 } from "../cache/weatherCache";
 
-// GET /widgets - List all widgets from MongoDB
+/**
+ * GET /widgets
+ * List all widgets from MongoDB, attaching current weather data to each.
+ * Weather data is fetched from cache if valid, otherwise from the weather service.
+ * City names are capitalized for response consistency.
+ */
 export const getWidgets = asyncHandler(
   async (req: Request, res: Response, next: Function) => {
     const widgets = await Widget.find();
 
-    // For each widget, fetch weather and attach temperature/description
+    // Attach weather data to each widget
     const widgetsWithWeather = await Promise.all(
       widgets.map(async (widget) => {
         // Capitalize city name for response
@@ -48,7 +60,13 @@ export const getWidgets = asyncHandler(
   }
 );
 
-// POST /widgets - Create a new widget in MongoDB and return weather data (with caching)
+/**
+ * POST /widgets
+ * Create a new widget for a given location and return its weather data.
+ * - Validates input and checks for duplicate widgets (case-insensitive).
+ * - Capitalizes city names for consistency.
+ * - Utilizes weather cache for performance.
+ */
 export const createWidget = asyncHandler(
   async (req: Request, res: Response, next: Function) => {
     let { location } = req.body;
@@ -88,7 +106,11 @@ export const createWidget = asyncHandler(
   }
 );
 
-// DELETE /widgets/:id - Delete a widget by id from MongoDB
+/**
+ * DELETE /widgets/:id
+ * Delete a widget by its MongoDB ObjectId.
+ * Returns a success message or 404 if not found.
+ */
 export const deleteWidget = asyncHandler(
   async (req: Request, res: Response, next: Function) => {
     const { id } = req.params;

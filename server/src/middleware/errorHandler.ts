@@ -1,23 +1,30 @@
-/**
- * Express error handling middleware.
- * Catches errors thrown in routes/controllers and sends a consistent JSON response.
- * Handles custom ErrorResponse objects and falls back to generic errors.
- *
- * Usage:
- *   app.use(errorHandler);
- *
- * This should be the last middleware registered in your Express app.
- */
+// ================= Express Error Handler Middleware =============
+// Catches errors thrown in routes/controllers and sends a consistent
+// JSON response. Handles custom ErrorResponse objects and falls back
+// to generic errors. Should be registered last in the Express app.
+// Usage: app.use(errorHandler);
+// ===============================================================
+
 import { Request, Response, NextFunction } from "express";
 import ErrorResponse from "../utils/errorResponse";
 
+/**
+ * Express error handling middleware.
+ * @param err - The error thrown in a route/controller (can be Error or ErrorResponse)
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next middleware function
+ *
+ * Sends a JSON response with error details and appropriate status code.
+ * If the error is a custom ErrorResponse, uses its status code; otherwise defaults to 500.
+ */
 const errorHandler = (
   err: Error | ErrorResponse,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  // If the error is a custom ErrorResponse, use its status code; otherwise default to 500
+  // Determine status code based on error type
   const statusCode =
     err instanceof ErrorResponse && err.statusCode ? err.statusCode : 500;
   res.status(statusCode).json({
@@ -27,4 +34,5 @@ const errorHandler = (
   });
 };
 
+// Export the error handler for use in Express app
 export default errorHandler;

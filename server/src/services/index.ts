@@ -1,8 +1,19 @@
+// ================= Weather Service Module =======================
+// Provides functions to fetch weather and geolocation data using
+// Open-Meteo APIs. Handles city geocoding and weather code mapping.
+// Throws custom ErrorResponse objects for error handling in controllers.
+// ===============================================================
+
 import { fetchWeatherApi } from "openmeteo";
 import ErrorResponse from "../utils/errorResponse";
 import axios from "axios";
 
-// Fetch latitude and longitude for a city name using Open-Meteo geocoding API
+/**
+ * Fetch latitude and longitude for a city name using Open-Meteo geocoding API.
+ * @param city - The city name to geocode
+ * @returns An object with lat and lon properties
+ * @throws ErrorResponse if the city is not found or API fails
+ */
 async function getLatLonForCity(
   city: string
 ): Promise<{ lat: number; lon: number }> {
@@ -21,7 +32,12 @@ async function getLatLonForCity(
   }
 }
 
-// Fetch weather for a city name
+/**
+ * Fetch weather for a city name using Open-Meteo APIs.
+ * @param city - The city name to fetch weather for
+ * @returns An object with temperature (rounded) and description
+ * @throws ErrorResponse if weather data cannot be fetched
+ */
 export async function fetchWeather(city: string) {
   try {
     const { lat, lon } = await getLatLonForCity(city);
@@ -70,6 +86,7 @@ export async function fetchWeather(city: string) {
       weatherCode = weathercodes[useIdx];
     }
 
+    // Map Open-Meteo weather codes to human-readable descriptions
     const weatherCodeMap: Record<number, string> = {
       0: "Clear sky",
       1: "Mainly clear",
