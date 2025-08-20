@@ -11,17 +11,67 @@ const weatherCache: Record<string, { data: any; timestamp: number }> = {};
 export const getWidgets = asyncHandler(
   async (req: Request, res: Response, next: Function) => {
     const widgets = await Widget.find();
-    res.status(200).json(widgets);
+
+    // For each widget, fetch weather and attach temperature/description
+    const widgetsWithWeather = await Promise.all(
+      widgets.map(async (widget) => {
+        // Capitalize city name for response
+        const capitalizedLocation = widget.location
+          .toLowerCase()
+          .split(" ")
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+        const cacheKey = widget.location.toLowerCase();
+        const cacheEntry = weatherCache[cacheKey];
+        const now = Date.now();
+        let weatherData;
+        if (cacheEntry && now - cacheEntry.timestamp < 5 * 60 * 1000) {
+          weatherData = cacheEntry.data;
+        } else {
+          weatherData = await fetchWeather(widget.location);
+          weatherCache[cacheKey] = {
+            data: weatherData,
+            timestamp: now,
+          };
+        }
+        return {
+          ...widget.toObject(),
+          location: capitalizedLocation,
+          weather: {
+            temperature: weatherData.temperature,
+            description: weatherData.description,
+          },
+        };
+      })
+    );
+
+    res.status(200).json(widgetsWithWeather);
   }
 );
 
 // POST /widgets - Create a new widget in MongoDB and return weather data (with caching)
 export const createWidget = asyncHandler(
   async (req: Request, res: Response, next: Function) => {
-    const { location } = req.body;
+    let { location } = req.body;
     if (!location) {
       throw new ErrorResponse("Location is required", 400);
     }
+
+    // Capitalize city name
+    location = location
+      .toLowerCase()
+      .split(" ")
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Check for duplicate city (case-insensitive)
+    const existingWidget = await Widget.findOne({
+      location: { $regex: new RegExp(`^${location}$`, "i") },
+    });
+    if (existingWidget) {
+      throw new ErrorResponse("Widget for this location already exists", 409);
+    }
+
     const widget = await Widget.create({ location });
 
     // Weather cache logic

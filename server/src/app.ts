@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 import wetterWidgetRouter from "./routes/wetterWidgetRouter";
 import errorHandler from "./middleware/errorHandler";
 import "./db/index"; // Ensure database connection is established
@@ -6,6 +7,7 @@ import { PORT } from "./config";
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");

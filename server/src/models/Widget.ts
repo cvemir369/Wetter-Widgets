@@ -11,6 +11,7 @@ const WidgetSchema: Schema<IWidget> = new Schema({
   location: {
     type: String,
     required: true,
+    unique: true,
   },
   createdAt: {
     type: Date,

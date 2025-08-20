@@ -1,103 +1,216 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import Widget from "../components/Widget";
+import { fetchWidgets, createWidget, deleteWidget } from "../utils/widgetApi";
+
+// Type for city suggestion
+type Suggestion = {
+  id: number;
+  name: string;
+  country: string;
+  admin1?: string;
+};
+
+type OpenMeteoGeocodingResult = {
+  id: number;
+  name: string;
+  country: string;
+  admin1?: string;
+};
+
+type OpenMeteoGeocodingResponse = {
+  results?: OpenMeteoGeocodingResult[];
+};
+
+type WidgetType = {
+  _id: string;
+  location: string;
+  weather?: {
+    temperature: number;
+    description: string;
+  };
+};
 
 export default function Home() {
+  const [location, setLocation] = useState("");
+  const [widgets, setWidgets] = useState<WidgetType[]>([]);
+
+  // Autocomplete state
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+
+  // Fetch widgets on mount
+  useEffect(() => {
+    fetchWidgets(setWidgets, () => {});
+  }, []);
+
+  // Fetch city suggestions when location changes (debounced)
+  useEffect(() => {
+    if (!location) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    const timeout = setTimeout(() => {
+      setIsLoadingSuggestions(true);
+      fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+          location
+        )}&count=5&language=de&format=json`
+      )
+        .then((res) => res.json())
+        .then((data: OpenMeteoGeocodingResponse) => {
+          if (data && data.results) {
+            setSuggestions(
+              data.results.map((item) => ({
+                id: item.id,
+                name: item.name,
+                country: item.country,
+                admin1: item.admin1,
+              }))
+            );
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        })
+        .catch(() => {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        })
+        .finally(() => setIsLoadingSuggestions(false));
+    }, 400);
+    setDebounceTimeout(timeout);
+    // Cleanup
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
+
+  const handleCreateWidget = () => {
+    createWidget(location, setLocation, setWidgets, () => {});
+  };
+
+  // When user clicks a suggestion
+  const handleSuggestionClick = (s: Suggestion) => {
+    setLocation(s.name);
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+  };
+
+  // Keyboard navigation for suggestions
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < suggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : suggestions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+        handleSuggestionClick(suggestions[highlightedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <h1 className="font-bold text-4xl">Wetter-Widgets</h1>
+        <p className="text-lg">
+          Erhalte die aktuellen Wetterdaten für deinen Standort.
+        </p>
+        <div className="flex flex-col gap-4">
+          <h2 className="font-bold text-2xl">Widget erstellen</h2>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateWidget();
+            }}
+            className="flex flex-col gap-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="relative w-full sm:w-96">
+              <input
+                className="border border-gray-300 rounded-md p-2 w-full"
+                type="text"
+                placeholder="Name der Stadt: z.B. Berlin"
+                value={location}
+                autoComplete="off"
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  setHighlightedIndex(-1);
+                }}
+                onFocus={() => location && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                onKeyDown={handleInputKeyDown}
+              />
+              {showSuggestions &&
+                (suggestions.length > 0 || isLoadingSuggestions) && (
+                  <ul className="absolute z-10 left-0 right-0 bg-gray-800 border border-gray-700 rounded-md mt-1 max-h-56 overflow-y-auto shadow-lg">
+                    {isLoadingSuggestions && (
+                      <li className="p-2 text-gray-400">Lädt...</li>
+                    )}
+                    {suggestions.map((s, idx) => (
+                      <li
+                        key={s.id}
+                        className={`p-2 cursor-pointer transition-colors ${
+                          highlightedIndex === idx
+                            ? "bg-gray-700 text-white"
+                            : "hover:bg-gray-700 text-gray-100"
+                        }`}
+                        onMouseDown={() => handleSuggestionClick(s)}
+                        onMouseEnter={() => setHighlightedIndex(idx)}
+                      >
+                        {s.name}
+                        {s.admin1 ? `, ${s.admin1}` : ""}
+                        {s.country ? `, ${s.country}` : ""}
+                      </li>
+                    ))}
+                    {!isLoadingSuggestions && suggestions.length === 0 && (
+                      <li className="p-2 text-gray-400">Keine Vorschläge</li>
+                    )}
+                  </ul>
+                )}
+            </div>
+            <button
+              type="submit"
+              className="mt-2 bg-gray-700 text-white rounded-md p-2 w-full sm:w-96 cursor-pointer hover:bg-gray-600 active:bg-gray-800 active:scale-95 transition-transform"
+            >
+              Widget erstellen
+            </button>
+          </form>
+        </div>
+        <div className="flex flex-col gap-4">
+          <h2 className="font-bold text-2xl">Aktive Widgets</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {widgets.map((w) => (
+              <Widget
+                key={w._id}
+                location={w.location}
+                temperature={w.weather?.temperature ?? 0}
+                description={w.weather?.description ?? "Keine Daten"}
+                onDelete={() => {
+                  deleteWidget(w._id, setWidgets, () => {});
+                }}
+              />
+            ))}
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
