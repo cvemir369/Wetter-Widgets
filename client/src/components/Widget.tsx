@@ -38,7 +38,7 @@ export default function Widget({
         <h3 className="font-bold text-xl">{location}</h3>
       </div>
       {/* Temperature and description */}
-      <p className="text-lg">{temperature}\u00b0C</p>
+      <p className="text-lg">{temperature}&deg;C</p>
       <p className="text-gray-600">{description}</p>
     </div>
   );
