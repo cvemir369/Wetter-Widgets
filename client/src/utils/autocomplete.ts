@@ -1,3 +1,9 @@
+// ================= Autocomplete Utility =========================
+// Provides types and functions for city autocomplete, including
+// fetching suggestions from Open-Meteo, handling suggestion clicks,
+// and keyboard navigation for the dropdown.
+// ===============================================================
+
 // Autocomplete and geocoding types
 export type Suggestion = {
   id: number;
@@ -17,7 +23,13 @@ export type OpenMeteoGeocodingResponse = {
   results?: OpenMeteoGeocodingResult[];
 };
 
-// Debounced fetch for city suggestions
+/**
+ * Fetch city suggestions from Open-Meteo geocoding API (debounced).
+ * @param location - The city name input
+ * @param setSuggestions - Setter for suggestions array
+ * @param setShowSuggestions - Setter for dropdown visibility
+ * @param setIsLoadingSuggestions - Setter for loading state
+ */
 export function fetchCitySuggestions(
   location: string,
   setSuggestions: (s: Suggestion[]) => void,
@@ -54,7 +66,13 @@ export function fetchCitySuggestions(
     .finally(() => setIsLoadingSuggestions(false));
 }
 
-// Suggestion click handler
+/**
+ * Handle click on a suggestion in the dropdown.
+ * @param s - The selected suggestion
+ * @param setLocation - Setter for input value
+ * @param setShowSuggestions - Setter for dropdown visibility
+ * @param setHighlightedIndex - Setter for highlighted index
+ */
 export function handleSuggestionClick(
   s: Suggestion,
   setLocation: (v: string) => void,
@@ -66,7 +84,16 @@ export function handleSuggestionClick(
   setHighlightedIndex(-1);
 }
 
-// Keyboard navigation for suggestions
+/**
+ * Keyboard navigation for suggestions dropdown.
+ * @param e - Keyboard event
+ * @param showSuggestions - Whether dropdown is visible
+ * @param suggestions - Array of suggestions
+ * @param highlightedIndex - Current highlighted index
+ * @param setHighlightedIndex - Setter for highlighted index
+ * @param handleSuggestionClick - Handler for selecting a suggestion
+ * @param setShowSuggestions - Setter for dropdown visibility
+ */
 export function handleInputKeyDown(
   e: React.KeyboardEvent<HTMLInputElement>,
   showSuggestions: boolean,

@@ -1,3 +1,9 @@
+// ================= Home Page Component ==========================
+// Main UI for Wetter Widgets. Handles widget creation, autocomplete,
+// and displays all active weather widgets. Uses utility functions for
+// API calls and autocomplete logic. Styled with Tailwind CSS.
+// ================================================================
+
 "use client";
 import { useState, useEffect } from "react";
 import Widget from "../components/Widget";
@@ -9,6 +15,7 @@ import {
   handleInputKeyDown as handleInputKeyDownUtil,
 } from "../utils/autocomplete";
 
+// Type for a weather widget object
 type WidgetType = {
   _id: string;
   location: string;
@@ -19,7 +26,9 @@ type WidgetType = {
 };
 
 export default function Home() {
+  // State for the city input field
   const [location, setLocation] = useState("");
+  // State for all active widgets
   const [widgets, setWidgets] = useState<WidgetType[]>([]);
 
   // Autocomplete state
@@ -57,6 +66,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
+  // Create a new widget for the current location
   const handleCreateWidget = () => {
     createWidget(location, setLocation, setWidgets, () => {});
   };
@@ -87,6 +97,7 @@ export default function Home() {
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+        {/* Widget creation form */}
         <div className="flex flex-col gap-4">
           <h2 className="font-bold text-2xl">Widget erstellen</h2>
           <form
@@ -111,6 +122,7 @@ export default function Home() {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
                 onKeyDown={handleInputKeyDown}
               />
+              {/* Autocomplete suggestions dropdown */}
               {showSuggestions &&
                 (suggestions.length > 0 || isLoadingSuggestions) && (
                   <ul className="absolute z-10 left-0 right-0 bg-gray-800 border border-gray-700 rounded-md mt-1 max-h-56 overflow-y-auto shadow-lg">
@@ -147,6 +159,8 @@ export default function Home() {
             </button>
           </form>
         </div>
+
+        {/* Active widgets list */}
         <div className="flex flex-col gap-4">
           <h2 className="font-bold text-2xl">Aktive Widgets</h2>
           {widgets.length === 0 ? (

@@ -1,3 +1,9 @@
+// ================= Weather Icon Utility =========================
+// Maps weather description strings to appropriate weather icons
+// using react-icons. Used by the Widget component to display
+// a visual representation of the current weather.
+// ===============================================================
+
 import React from "react";
 import {
   FaSun,
@@ -8,6 +14,11 @@ import {
   FaBolt,
 } from "react-icons/fa";
 
+/**
+ * Returns a weather icon component based on the description string.
+ * @param description - Weather description (e.g., "Clear sky")
+ * @returns A React element representing the weather icon
+ */
 export function getWeatherIcon(description: string) {
   const desc = description.toLowerCase();
   if (desc.includes("sun") || desc.includes("clear"))

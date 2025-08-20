@@ -1,7 +1,13 @@
-import axios from "axios";
+// ================= Widget API Utility ===========================
+// Provides functions for interacting with the Wetter Widgets API,
+// including fetching, creating, and deleting widgets. Handles API
+// errors and updates React state accordingly.
+// ===============================================================
 
+import axios from "axios";
 import { Dispatch, SetStateAction } from "react";
 
+// Type for a weather widget object
 type WidgetType = {
   _id: string;
   location: string;
@@ -11,6 +17,11 @@ type WidgetType = {
   };
 };
 
+/**
+ * Fetch all widgets from the API and update state.
+ * @param setWidgets - Setter for widgets array
+ * @param setError - Setter for error message
+ */
 export async function fetchWidgets(
   setWidgets: Dispatch<SetStateAction<WidgetType[]>>,
   setError: Dispatch<SetStateAction<string>>
@@ -25,6 +36,14 @@ export async function fetchWidgets(
   }
 }
 
+/**
+ * Create a new widget for a given location and update state.
+ * Handles duplicate widget errors and general API errors.
+ * @param location - City name
+ * @param setLocation - Setter for input value
+ * @param setWidgets - Setter for widgets array
+ * @param setError - Setter for error message
+ */
 export async function createWidget(
   location: string,
   setLocation: Dispatch<SetStateAction<string>>,
@@ -60,13 +79,19 @@ export async function createWidget(
       (err as AxiosError409).response.data?.error ===
         "Widget for this location already exists"
     ) {
-      setError("Für diese Stadt existiert bereits ein Widget.");
+      setError("F\u00fcr diese Stadt existiert bereits ein Widget.");
     } else {
       setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
     }
   }
 }
 
+/**
+ * Delete a widget by ID and update state.
+ * @param id - Widget ID
+ * @param setWidgets - Setter for widgets array
+ * @param setError - Setter for error message
+ */
 export async function deleteWidget(
   id: string,
   setWidgets: Dispatch<SetStateAction<WidgetType[]>>,
@@ -78,6 +103,6 @@ export async function deleteWidget(
       prev.filter((widget) => widget._id !== id)
     );
   } catch {
-    setError("Widget konnte nicht gelöscht werden.");
+    setError("Widget konnte nicht gel\u00f6scht werden.");
   }
 }
