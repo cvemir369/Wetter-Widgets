@@ -1,25 +1,21 @@
-import React from "react";
+"use client";
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
-const AboutPage = () => (
-  <main className="max-w-2xl mx-auto p-8 sm:p-16 flex flex-col gap-6">
-    <h1 className="text-3xl font-bold mb-2">About This App</h1>
-    <p>
-      Wetter Widgets is a modern weather application that provides real-time
-      weather updates, forecasts, and interactive widgets for your convenience.
-      Built with React and TypeScript, it aims to deliver a fast, reliable, and
-      user-friendly experience.
-    </p>
-    <ul className="list-disc list-inside pl-2 space-y-1">
-      <li>Real-time weather data</li>
-      <li>Customizable widgets</li>
-      <li>Responsive design</li>
-      <li>Open-source and privacy-focused</li>
-    </ul>
-    <p>
-      Developed by passionate engineers to help you stay informed about the
-      weather, wherever you are.
-    </p>
-  </main>
-);
+export default function About() {
+  const [readme, setReadme] = useState<string>("Lade Projektbeschreibung...");
 
-export default AboutPage;
+  useEffect(() => {
+    fetch("/README.md")
+      .then((res) => (res.ok ? res.text() : Promise.reject()))
+      .then((text) => setReadme(text))
+      .catch(() => setReadme("README.md konnte nicht geladen werden."));
+  }, []);
+
+  return (
+    <main className="prose prose-invert max-w-3xl mx-auto p-8 bg-neutral-900 rounded-lg shadow-lg mt-8">
+      <h1 className="text-3xl font-bold mb-4">Über dieses Projekt</h1>
+      <ReactMarkdown>{readme}</ReactMarkdown>
+    </main>
+  );
+}

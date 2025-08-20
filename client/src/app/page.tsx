@@ -2,25 +2,12 @@
 import { useState, useEffect } from "react";
 import Widget from "../components/Widget";
 import { fetchWidgets, createWidget, deleteWidget } from "../utils/widgetApi";
-
-// Type for city suggestion
-type Suggestion = {
-  id: number;
-  name: string;
-  country: string;
-  admin1?: string;
-};
-
-type OpenMeteoGeocodingResult = {
-  id: number;
-  name: string;
-  country: string;
-  admin1?: string;
-};
-
-type OpenMeteoGeocodingResponse = {
-  results?: OpenMeteoGeocodingResult[];
-};
+import {
+  Suggestion,
+  fetchCitySuggestions,
+  handleSuggestionClick as handleSuggestionClickUtil,
+  handleInputKeyDown as handleInputKeyDownUtil,
+} from "../utils/autocomplete";
 
 type WidgetType = {
   _id: string;
@@ -58,37 +45,14 @@ export default function Home() {
     }
     if (debounceTimeout) clearTimeout(debounceTimeout);
     const timeout = setTimeout(() => {
-      setIsLoadingSuggestions(true);
-      fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-          location
-        )}&count=5&language=de&format=json`
-      )
-        .then((res) => res.json())
-        .then((data: OpenMeteoGeocodingResponse) => {
-          if (data && data.results) {
-            setSuggestions(
-              data.results.map((item) => ({
-                id: item.id,
-                name: item.name,
-                country: item.country,
-                admin1: item.admin1,
-              }))
-            );
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-          }
-        })
-        .catch(() => {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        })
-        .finally(() => setIsLoadingSuggestions(false));
+      fetchCitySuggestions(
+        location,
+        setSuggestions,
+        setShowSuggestions,
+        setIsLoadingSuggestions
+      );
     }, 400);
     setDebounceTimeout(timeout);
-    // Cleanup
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
@@ -99,41 +63,30 @@ export default function Home() {
 
   // When user clicks a suggestion
   const handleSuggestionClick = (s: Suggestion) => {
-    setLocation(s.name);
-    setShowSuggestions(false);
-    setHighlightedIndex(-1);
+    handleSuggestionClickUtil(
+      s,
+      setLocation,
+      setShowSuggestions,
+      setHighlightedIndex
+    );
   };
 
   // Keyboard navigation for suggestions
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || suggestions.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlightedIndex((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : 0
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightedIndex((prev) =>
-        prev > 0 ? prev - 1 : suggestions.length - 1
-      );
-    } else if (e.key === "Enter") {
-      if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
-        handleSuggestionClick(suggestions[highlightedIndex]);
-      }
-    } else if (e.key === "Escape") {
-      setShowSuggestions(false);
-      setHighlightedIndex(-1);
-    }
+    handleInputKeyDownUtil(
+      e,
+      showSuggestions,
+      suggestions,
+      highlightedIndex,
+      setHighlightedIndex,
+      handleSuggestionClick,
+      setShowSuggestions
+    );
   };
 
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
+    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <h1 className="font-bold text-4xl">Wetter-Widgets</h1>
-        <p className="text-lg">
-          Erhalte die aktuellen Wetterdaten für deinen Standort.
-        </p>
         <div className="flex flex-col gap-4">
           <h2 className="font-bold text-2xl">Widget erstellen</h2>
           <form
@@ -188,7 +141,7 @@ export default function Home() {
             </div>
             <button
               type="submit"
-              className="mt-2 bg-gray-700 text-white rounded-md p-2 w-full sm:w-96 cursor-pointer hover:bg-gray-600 active:bg-gray-800 active:scale-95 transition-transform"
+              className="mt-2 bg-neutral-700 text-white rounded-md p-2 w-full sm:w-96 cursor-pointer hover:bg-neutral-600 active:bg-neutral-800 active:scale-95 transition-transform"
             >
               Widget erstellen
             </button>
@@ -196,19 +149,25 @@ export default function Home() {
         </div>
         <div className="flex flex-col gap-4">
           <h2 className="font-bold text-2xl">Aktive Widgets</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {widgets.map((w) => (
-              <Widget
-                key={w._id}
-                location={w.location}
-                temperature={w.weather?.temperature ?? 0}
-                description={w.weather?.description ?? "Keine Daten"}
-                onDelete={() => {
-                  deleteWidget(w._id, setWidgets, () => {});
-                }}
-              />
-            ))}
-          </div>
+          {widgets.length === 0 ? (
+            <div className="text-gray-400 p-4 text-center">
+              Keine Widgets vorhanden
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {widgets.map((w) => (
+                <Widget
+                  key={w._id}
+                  location={w.location}
+                  temperature={w.weather?.temperature ?? 0}
+                  description={w.weather?.description ?? "Keine Daten"}
+                  onDelete={() => {
+                    deleteWidget(w._id, setWidgets, () => {});
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
