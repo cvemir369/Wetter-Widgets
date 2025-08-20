@@ -17,7 +17,7 @@ npm run dev
 > 💡 Beispiel `.env`-Datei:
 
 ```env
-MONGODB_URI=your-mongodb-atlas-connection
+MONGO_URI=your-mongodb-atlas-connection
 PORT=5000
 ```
 
