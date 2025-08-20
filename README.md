@@ -1,123 +1,160 @@
-## 📦 Projektstruktur (Vorschlag)
-
-```txt
-/project-root
-├── frontend/         → Next.js Frontend (Dashboard)
-│   ├── pages/
-│   ├── components/
-│   └── utils/
-├── backend/          → Node.js Backend (Express oder Fastify)
-│   ├── routes/
-│   ├── controllers/
-│   ├── models/
-│   ├── services/     → Wetterdaten-Logik inkl. Caching
-│   └── cache/        → optional: In-Memory oder File-basierter Cache
-└── README.md
-```
-
----
-
 ## 🚀 Setup-Anleitung
 
-### Voraussetzungen:
+### Voraussetzungen
+
 - Node.js (v18+ empfohlen)
-- MongoDB (lokal oder über MongoDB Atlas)
-- NPM oder Yarn
+- MongoDB Atlas
+- NPM
 
 ### 1. Backend starten
 
 ```bash
-# Ins Backend wechseln
-cd backend
-
-# Abhängigkeiten installieren
+cd server
 npm install
-
-# Entwicklungsserver starten
 npm run dev
 ```
 
 > 💡 Beispiel `.env`-Datei:
+
 ```env
-MONGODB_URI=mongodb://localhost:27017/widgets
+MONGO_URI=your-mongodb-atlas-connection
 PORT=5000
 ```
-
----
 
 ### 2. Frontend starten
 
 ```bash
-# Ins Frontend wechseln
-cd frontend
-
-# Abhängigkeiten installieren
+cd client
 npm install
-
-# Entwicklungsserver starten
 npm run dev
 ```
 
-> 💡 Standardmäßig läuft das Frontend unter `http://localhost:3000`  
-> 💡 Das Backend sollte unter `http://localhost:5000` erreichbar sein
+> 💡 Beispiel `.env`-Datei:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+> 💡 Frontend unter `http://localhost:3000`
+> 💡 Backend unter `http://localhost:5000`
 
 ---
 
-## 🔍 Funktionale Anforderungen
+## 🧾 API-Beschreibung
 
-### 🔹 Dashboard (Frontend)
-- Benutzer kann mehrere Widgets erstellen, z. B. für:
-  - Wetter in Berlin
-  - Wetter in Hamburg
-  - Wetter in Paris
-- Jedes Widget zeigt live die Wetterdaten für den gewählten Ort
-- Widgets können gelöscht werden
-- Keine Authentifizierung notwendig
+Das Backend stellt eine einfache REST-API bereit, um Wetter-Widgets zu verwalten. Die Endpunkte sind:
 
-### 🔹 Backend (API + MongoDB)
-- API zum Erstellen, Abrufen und Löschen von Widgets
-- MongoDB speichert:
-  - Widget-Daten (`_id`, `location`, `createdAt`)
-  - (Optional: Benutzer-ID, falls später Auth hinzukommt)
+| Methode | Endpoint       | Beschreibung                        |
+| ------- | -------------- | ----------------------------------- |
+| GET     | `/widgets`     | Liste aller gespeicherten Widgets   |
+| POST    | `/widgets`     | Neues Widget erstellen (`location`) |
+| DELETE  | `/widgets/:id` | Widget löschen                      |
 
-### 🔹 Wetterdaten-Handling
-- Wetterdaten werden bei Bedarf vom Backend über einen externen Wetterdienst abgerufen (z. B. open-meteo oder OpenWeather)
-- Wenn für eine Stadt in den letzten **5 Minuten** bereits ein Abruf erfolgte, wird der **cached** Wert zurückgegeben (Memory oder einfache Cache-Datei)
+**Beispiel-Request für ein neues Widget:**
+
+```http
+POST /widgets
+Content-Type: application/json
+
+{
+	"location": "Berlin"
+}
+```
+
+**Antwort:**
+
+```json
+{
+    "_id": "68a528219b10fb5466680b17",
+    "location": "Berlin",
+    "createdAt": "2025-08-20T01:42:57.181Z",
+    "__v": 0,
+    "weather": {
+        "temperature": 17,
+        "description": "Clear sky"
+    }
+},
+```
 
 ---
 
-## 🧾 API-Vorschlag
+## 🏗️ Architekturüberblick
 
-| Methode | Endpoint                 | Beschreibung                       |
-|---------|--------------------------|------------------------------------|
-| GET     | `/widgets`               | Liste aller gespeicherten Widgets |
-| POST    | `/widgets`               | Neues Widget erstellen (`location`) |
-| DELETE  | `/widgets/:id`           | Widget löschen                     |
+```txt
+/Wetter-Widgets
+├── client/                  → Next.js Frontend (Dashboard)
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── about/
+│   │   │   ├── favicon.ico
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── components/
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── Widget.tsx
+│   │   └── utils/
+│   │       ├── autocomplete.ts
+│   │       ├── weatherIcon.tsx
+│   │       └── widgetApi.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── ...
+├── server/                  → Node.js Backend (Express)
+│   ├── src/
+│   │   ├── app.ts
+│   │   ├── cache/
+│   │   │   └── weatherCache.ts
+│   │   ├── config/
+│   │   │   └── index.ts
+│   │   ├── controllers/
+│   │   │   └── wetterWidgetController.ts
+│   │   ├── db/
+│   │   │   └── index.ts
+│   │   ├── middleware/
+│   │   │   └── errorHandler.ts
+│   │   ├── models/
+│   │   │   └── Widget.ts
+│   │   ├── routes/
+│   │   │   └── wetterWidgetRouter.ts
+│   │   ├── services/
+│   │   │   └── index.ts
+│   │   └── utils/
+│   │       ├── asyncHandler.ts
+│   │       └── errorResponse.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── ...
+├── README.md
+└── ...
+```
+
+**Ablauf:**
+
+- Das Frontend (Next.js) kommuniziert mit dem Backend über eine REST-API.
+- Das Backend verwaltet die Widgets und ruft Wetterdaten von Open-Meteo ab.
+- Wetterdaten werden für 5 Minuten gecached, um unnötige API-Requests zu vermeiden.
+- Die Daten werden in einer MongoDB gespeichert.
+
+**Diagramm:**
+
+```mermaid
+flowchart TD
+	User[Benutzer] -- UI --> Frontend[Next.js]
+	Frontend -- REST API --> Backend[Node.js/Express]
+	Backend -- Wetterdaten --> OpenMeteo[Open-Meteo API]
+	Backend -- speichert/liest --> DB[(MongoDB)]
+	Backend -- Cache --> Cache[In-Memory/File Cache]
+```
 
 ---
 
 ## ☁️ Wetterdaten-API
 
-Kostenlose APIs zur Auswahl:
+Die Anwendung nutzt die kostenlose Open-Meteo API:
 
 - [https://open-meteo.com/](https://open-meteo.com/) (kein API-Key nötig)
-- [https://openweathermap.org/api](https://openweathermap.org/api) (kostenlos, mit Key)
 
 ---
-
-## 🧪 Ziel des Projekts
-
-- Verständnis für API-Design, Next.js-Frontend und Microservice-Architektur
-- Umgang mit externen APIs und Caching
-- MongoDB-Datenmodellierung
-- Trennung von Backend-Logik und Frontend-Komponenten
-- saubere Code-Struktur, Modularität und Dokumentation
-
----
-
-## 📄 Was soll eingereicht werden?
-
-- `README.md` mit:
-  - Setup-Anleitung
-  - API-Beschreibung
-  - Kurzer Architekturüberblick (z. B. mit Text oder Diagramm)
