@@ -3,8 +3,8 @@
 ### Voraussetzungen
 
 - Node.js (v18+ empfohlen)
-- MongoDB (lokal oder über MongoDB Atlas)
-- NPM oder Yarn
+- MongoDB Atlas
+- NPM
 
 ### 1. Backend starten
 
@@ -29,14 +29,20 @@ npm install
 npm run dev
 ```
 
-> 💡 Standardmäßig läuft das Frontend unter `http://localhost:3000`
-> 💡 Das Backend sollte unter `http://localhost:5000` erreichbar sein
+> 💡 Beispiel `.env`-Datei:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+> 💡 Frontend unter `http://localhost:3000`
+> 💡 Backend unter `http://localhost:5000`
 
 ---
 
 ## 🧾 API-Beschreibung
 
-Das Backend stellt eine einfache REST-API bereit, um Wetter-Widgets zu verwalten. Die wichtigsten Endpunkte sind:
+Das Backend stellt eine einfache REST-API bereit, um Wetter-Widgets zu verwalten. Die Endpunkte sind:
 
 | Methode | Endpoint       | Beschreibung                        |
 | ------- | -------------- | ----------------------------------- |
@@ -59,13 +65,15 @@ Content-Type: application/json
 
 ```json
 {
-  "_id": "...",
-  "location": "Berlin",
-  "weather": {
-    "temperature": 22,
-    "description": "Klarer Himmel"
-  }
-}
+    "_id": "68a528219b10fb5466680b17",
+    "location": "Berlin",
+    "createdAt": "2025-08-20T01:42:57.181Z",
+    "__v": 0,
+    "weather": {
+        "temperature": 17,
+        "description": "Clear sky"
+    }
+},
 ```
 
 ---
@@ -74,17 +82,53 @@ Content-Type: application/json
 
 ```txt
 /Wetter-Widgets
-├── client/   → Next.js Frontend (Dashboard)
-│   ├── src/app/
-│   ├── src/components/
-│   └── src/utils/
-├── server/   → Node.js Backend (Express)
-│   ├── src/routes/
-│   ├── src/controllers/
-│   ├── src/models/
-│   ├── src/services/   → Wetterdaten-Logik inkl. Caching
-│   └── src/cache/      → In-Memory oder File-basierter Cache
-└── README.md
+├── client/                  → Next.js Frontend (Dashboard)
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── about/
+│   │   │   ├── favicon.ico
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── components/
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── Widget.tsx
+│   │   └── utils/
+│   │       ├── autocomplete.ts
+│   │       ├── weatherIcon.tsx
+│   │       └── widgetApi.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── ...
+├── server/                  → Node.js Backend (Express)
+│   ├── src/
+│   │   ├── app.ts
+│   │   ├── cache/
+│   │   │   └── weatherCache.ts
+│   │   ├── config/
+│   │   │   └── index.ts
+│   │   ├── controllers/
+│   │   │   └── wetterWidgetController.ts
+│   │   ├── db/
+│   │   │   └── index.ts
+│   │   ├── middleware/
+│   │   │   └── errorHandler.ts
+│   │   ├── models/
+│   │   │   └── Widget.ts
+│   │   ├── routes/
+│   │   │   └── wetterWidgetRouter.ts
+│   │   ├── services/
+│   │   │   └── index.ts
+│   │   └── utils/
+│   │       ├── asyncHandler.ts
+│   │       └── errorResponse.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── ...
+├── README.md
+└── ...
 ```
 
 **Ablauf:**
@@ -114,11 +158,3 @@ Die Anwendung nutzt die kostenlose Open-Meteo API:
 - [https://open-meteo.com/](https://open-meteo.com/) (kein API-Key nötig)
 
 ---
-
-## 🧪 Ziel des Projekts
-
-- Verständnis für API-Design, Next.js-Frontend und Microservice-Architektur
-- Umgang mit externen APIs und Caching
-- MongoDB-Datenmodellierung
-- Trennung von Backend-Logik und Frontend-Komponenten
-- Saubere Code-Struktur, Modularität und Dokumentation
