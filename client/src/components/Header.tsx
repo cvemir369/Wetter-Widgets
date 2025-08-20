@@ -20,7 +20,7 @@ export default function Header() {
           alt="Wetter Widgets Logo"
           width={32}
           height={32}
-          className="h-8 p-1 mr-2 bg-white rounded-full shadow-md"
+          className="h-8 mr-2"
         />
         <span className="text-2xl font-bold text-white">Wetter Widgets</span>
       </Link>
